@@ -1,0 +1,64 @@
+def nexusInstanceId = "localNexus"
+def nexusGroupId = "com.globex.web"
+def nexusPackaging = "war"
+
+def artifactNameA = "globex-web-A"
+def artifactVersionA = "1.0.0"
+def artifactSemVersionA = "${artifactVersionA}"
+
+def artifactNameB = "globex-web-B" // also used for nexus filePath and artifactId attributes
+def artifactVersionB = "1.0.0"
+def artifactSemVersionB = "${artifactVersionB}"
+
+def repoName = "ff-artifacts-repo" // also used for nexusRepositoryId attribute
+
+pipeline {
+    agent any
+    tools { 
+        maven 'Maven' 
+    }
+    stages {
+        stage('CI') {
+            steps {
+			  //snDevOpsStep()
+              sh 'mvn compile'
+              sh 'mvn verify'
+        	}
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml' 
+                }
+            }
+        }
+        stage('UAT deploy') {
+            steps {
+                //snDevOpsStep()
+                sh 'mvn package'
+				//snDevOpsArtifact(artifactsPayload:"""{ "artifacts": [ {"name": "${artifactNameB}", "repositoryName": "${repoName}", "version": "${artifactVersionB}", "semanticVersion": "${artifactSemVersionB}" }, {"name": "${artifactNameA}", "repositoryName": "${repoName}", "version": "${artifactVersionA}", "semanticVersion": "${artifactSemVersionA}" } ] }""")
+				//snDevOpsArtifact(artifactsPayload:"""{ "artifacts": [ {"name": "${artifactNameA}", "repositoryName": "${repoName}", "version": "${artifactVersionA}", "semanticVersion": "${artifactSemVersionA}" } ] }""")
+                //nexusPublisher nexusInstanceId: "${nexusInstanceId}", nexusRepositoryId: "${repoName}", packages: [[$class: 'MavenPackage', mavenAssetList: [[classifier: '', extension: '', filePath: "target/${artifactName}.${nexusPackaging}"]], mavenCoordinate: [artifactId: "${artifactName}", groupId: "${nexusGroupId}", packaging: "${nexusPackaging}", version: "${artifactSemVersion}"]]]
+               
+	    	}
+        }
+        stage('UAT test') {
+          stages {
+                  stage('UAT unit test') {
+                      steps {
+                          //snDevOpsStep()
+                          //snDevOpsChange()
+                          sh 'mvn compile'
+                          sh 'mvn verify'
+                      }
+                  }
+                  stage('UAT static code test') {
+                      steps {
+                          //snDevOpsStep()
+                          //snDevOpsChange()
+                          sh 'mvn compile'
+                          sh 'mvn verify'
+                      }
+                  }
+              }
+          }
+    	}
+}

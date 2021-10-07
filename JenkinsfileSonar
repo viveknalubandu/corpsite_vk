@@ -1,0 +1,53 @@
+def artifactName = "corpsite-jar" // also used for nexus filePath and artifactId attributes
+def artifactVersion = "1.${env.BUILD_NUMBER}"
+def artifactSemVersion = "${artifactVersion}.0"
+def repoName = "Corpsite"
+pipeline {
+    agent any
+    tools { 
+        maven 'Maven' 
+    }
+    stages {
+        stage('BuildAndTest') {
+            steps {
+			 echo 'Running BuildAndTest'
+             sh 'mvn compile'
+             sh 'mvn verify'
+        	}
+           post {
+                always {
+                    junit '**/target/surefire-reports/*.xml' 
+                }
+           }
+        }
+        stage('Sonarqube') {
+            environment {
+                scannerHome = tool 'SonarQube'
+            }
+            steps {
+				echo 'Running Sonarqube'
+                withSonarQubeEnv('Sonarqube') {
+                    sh "${scannerHome}/bin/sonar-scanner"
+                }
+                //timeout(time: 10, unit: 'MINUTES') {
+                //    waitForQualityGate abortPipeline: true
+                //}
+            }
+        }
+/*
+		stage('Change') {
+          	steps {
+                echo 'Running Change'
+				snDevOpsChange()
+			}
+        }
+        stage('Deploy') {
+            steps {
+				echo 'Running Deploy'
+                //sh 'mvn package'
+				//snDevOpsArtifact(artifactsPayload:"""{"artifacts": [{"name": "${artifactName}","version":"${artifactVersion}","semanticVersion": "${artifactSemVersion}","repositoryName": "${repoName}"}]}""")
+	    	}
+        }
+*/
+	}
+}
