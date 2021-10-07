@@ -20,13 +20,13 @@ pipeline {
                 }
            }
         }
-        stage('Sonarqube') {
+        stage('sonarScanner') {
             environment {
-                scannerHome = tool 'SonarQube'
+                scannerHome = tool 'sonarScanner'
             }
             steps {
-				echo 'Running Sonarqube'
-                withSonarQubeEnv('Sonarqube') {
+				echo 'Running sonarScanner'
+                withSonarQubeEnv('sonarQube_local') {
                     sh "${scannerHome}/bin/sonar-scanner"
                 }
                 //timeout(time: 10, unit: 'MINUTES') {
